@@ -3,7 +3,8 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator
 
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 from llmtrigger.api.routes import history, rules, test
@@ -50,6 +51,31 @@ def create_app() -> FastAPI:
     app.include_router(test.router, prefix="/api/v1")
     app.include_router(history.router, prefix="/api/v1")
 
+    # Error response handlers
+    @app.exception_handler(HTTPException)
+    async def http_exception_handler(request: Request, exc: HTTPException) -> JSONResponse:
+        detail = exc.detail
+        content = {
+            "code": exc.status_code,
+            "message": detail if isinstance(detail, str) else "HTTP error",
+            "data": None if isinstance(detail, str) else detail,
+        }
+        return JSONResponse(status_code=exc.status_code, content=content)
+
+    @app.exception_handler(RequestValidationError)
+    async def validation_exception_handler(
+        request: Request,
+        exc: RequestValidationError,
+    ) -> JSONResponse:
+        return JSONResponse(
+            status_code=422,
+            content={
+                "code": 422,
+                "message": "Validation error",
+                "data": exc.errors(),
+            },
+        )
+
     # Global exception handler
     @app.exception_handler(Exception)
     async def global_exception_handler(request: Request, exc: Exception) -> JSONResponse:
@@ -64,7 +90,7 @@ def create_app() -> FastAPI:
             content={
                 "code": 500,
                 "message": "Internal server error",
-                "detail": str(exc) if settings.debug else None,
+                "data": str(exc) if settings.debug else None,
             },
         )
 

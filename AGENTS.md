@@ -21,3 +21,6 @@ Git history favors clear, sentence-case commit messages (often full sentences de
 
 ## Configuration & Secrets
 Settings load from environment variables and `.env` (see `llmtrigger/core/config.py`). Common entries include `REDIS_URL`, `RABBITMQ_URL`, `OPENAI_API_KEY`, `OPENAI_BASE_URL`, and `OPENAI_MODEL`. Do not commit secrets; use `.env` locally.
+
+## Important Notes
+- 使用中文进行交流和沟通

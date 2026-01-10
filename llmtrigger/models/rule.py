@@ -4,7 +4,7 @@ from datetime import datetime
 from enum import Enum
 from typing import Any
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 
 
 class RuleType(str, Enum):
@@ -78,6 +78,18 @@ class RuleConfig(BaseModel):
         default=None,
         description="LLM config for llm/hybrid rules",
     )
+
+    @model_validator(mode="after")
+    def validate_config(self) -> "RuleConfig":
+        """Ensure configuration matches rule type."""
+        if self.rule_type == RuleType.TRADITIONAL and not self.pre_filter:
+            raise ValueError("pre_filter is required for traditional rules")
+        if self.rule_type == RuleType.LLM and not self.llm_config:
+            raise ValueError("llm_config is required for llm rules")
+        if self.rule_type == RuleType.HYBRID:
+            if not self.pre_filter or not self.llm_config:
+                raise ValueError("pre_filter and llm_config are required for hybrid rules")
+        return self
 
 
 class NotifyTarget(BaseModel):

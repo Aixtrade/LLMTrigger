@@ -37,7 +37,7 @@ class RuleUpdate(BaseModel):
     description: str | None = Field(default=None, max_length=500)
     enabled: bool | None = None
     priority: int | None = Field(default=None, ge=0, le=1000)
-    event_types: list[str] | None = None
+    event_types: list[str] | None = Field(default=None, min_length=1)
     context_keys: list[str] | None = None
     rule_config: RuleConfig | None = None
     notify_policy: NotifyPolicy | None = None

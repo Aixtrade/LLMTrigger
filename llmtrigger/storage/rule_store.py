@@ -19,6 +19,10 @@ class RuleStore:
     def redis(self) -> Redis:
         return self._redis or get_redis()
 
+    @staticmethod
+    def _sort_key(rule: Rule) -> tuple[int, float, str]:
+        return (-rule.priority, -rule.metadata.created_at.timestamp(), rule.rule_id)
+
     async def create(self, rule: Rule) -> Rule:
         """Create a new rule.
 
@@ -152,13 +156,18 @@ class RuleStore:
             rule = await self.get(rule_id)
             if rule:
                 rules.append(rule)
-        return rules
+        return sorted(rules, key=self._sort_key)
 
-    async def list_by_event_type(self, event_type: str) -> list[Rule]:
+    async def list_by_event_type(
+        self,
+        event_type: str,
+        include_disabled: bool = False,
+    ) -> list[Rule]:
         """List rules matching an event type.
 
         Args:
             event_type: Event type to filter by
+            include_disabled: Whether to include disabled rules
 
         Returns:
             List of matching rules (sorted by priority descending)
@@ -167,12 +176,10 @@ class RuleStore:
         rules = []
         for rule_id in rule_ids:
             rule = await self.get(rule_id)
-            if rule and rule.enabled:
+            if rule and (include_disabled or rule.enabled):
                 rules.append(rule)
 
-        # Sort by priority (higher first)
-        rules.sort(key=lambda r: r.priority, reverse=True)
-        return rules
+        return sorted(rules, key=self._sort_key)
 
     async def set_enabled(self, rule_id: str, enabled: bool) -> bool:
         """Set rule enabled status.
