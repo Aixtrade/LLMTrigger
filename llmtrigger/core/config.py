@@ -93,6 +93,7 @@ class Settings(BaseSettings):
     smtp_user: str = Field(default="", description="SMTP username")
     smtp_password: str = Field(default="", description="SMTP password")
     smtp_from: str = Field(default="", description="Email sender address")
+    smtp_use_tls: bool = Field(default=True, description="Use STARTTLS (port 587). Set False for SSL (port 465)")
 
 
 @lru_cache

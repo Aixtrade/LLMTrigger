@@ -62,7 +62,8 @@ class EmailChannel(NotificationChannel):
                 port=self._settings.smtp_port,
                 username=self._settings.smtp_user or None,
                 password=self._settings.smtp_password or None,
-                start_tls=True,
+                use_tls=not self._settings.smtp_use_tls,
+                start_tls=self._settings.smtp_use_tls,
             )
             logger.info("Email sent", recipients=target.to, task_id=task.task_id)
             return True

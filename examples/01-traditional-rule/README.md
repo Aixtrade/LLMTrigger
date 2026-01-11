@@ -8,7 +8,7 @@
 - **规则类型**: Traditional (基于表达式)
 - **事件类型**: `trade.profit`
 - **触发条件**: `profit_rate > 0.05` (盈利率超过 5%)
-- **通知渠道**: Telegram
+- **通知渠道**: Telegram、邮件
 
 ## 文件说明
 
@@ -65,15 +65,21 @@ uv run python -m llmtrigger.worker
 
 ```bash
 # 步骤 1: 创建规则 (在项目根目录执行)
-./examples/01-traditional-rule/create_traditional_rule.sh [YOUR_TELEGRAM_CHAT_ID]
+./examples/01-traditional-rule/create_traditional_rule.sh [TELEGRAM_CHAT_IDS...] [EMAIL_ADDRESSES...]
 
-# 示例:
+# 示例 1: 单个 Telegram 聊天
 ./examples/01-traditional-rule/create_traditional_rule.sh 1234567890
+
+# 示例 2: 多个 Telegram 聊天
+./examples/01-traditional-rule/create_traditional_rule.sh 1234567890 -100987654321
+
+# 示例 3: Telegram + 邮件
+./examples/01-traditional-rule/create_traditional_rule.sh 1234567890 -- user1@example.com user2@example.com
 
 # 步骤 2: 发送测试事件
 uv run python examples/01-traditional-rule/send_test_events.py
 
-# 步骤 3: 检查 Telegram 是否收到场景1和场景3的告警
+# 步骤 3: 检查 Telegram 和邮件是否收到场景1和场景3的告警
 # 步骤 4: 查看 Worker 日志确认规则匹配过程
 ```
 
@@ -133,11 +139,15 @@ Sending notification via telegram
 Notification sent successfully ✅
 ```
 
-### 2. 检查 Telegram 消息
+### 2. 检查 Telegram 和邮件消息
 
 打开 Telegram,查看指定 chat_id 对应的聊天:
 - **应该收到**: 场景1 (3条) 和场景3 (3条) 共 6 条通知
 - **不应收到**: 场景2 的通知
+
+检查邮箱:
+- **应该收到**: 场景1 (3封邮件) 和场景3 (3封邮件) 共 6 封邮件
+- **不应收到**: 场景2 的邮件
 
 ### 3. 检查 Redis 数据
 
@@ -176,7 +186,8 @@ docker exec llmtrigger-rabbitmq-1 rabbitmqctl list_queues
 1. 确认规则 `enabled: true`
 2. 检查事件类型和上下文键是否匹配规则
 3. 验证 Telegram Bot Token 是否正确
-4. 检查是否被限流
+4. 验证邮件 SMTP 配置是否正确
+5. 检查是否被限流
 
 ```bash
 # 测试 Telegram Bot
@@ -287,12 +298,14 @@ symbol in ['BTCUSDT', 'ETHUSDT']
 1. **Traditional 规则配置**: 如何使用表达式定义触发条件
 2. **事件结构**: LLMTrigger 的事件格式和必需字段
 3. **上下文分组**: context_key 如何用于事件分组和去重
-4. **限流机制**: 如何配置通知频率限制
-5. **端到端流程**: 从事件发送到通知接收的完整流程
+4. **多通道通知**: 如何配置多个 Telegram 聊天和邮件地址
+5. **限流机制**: 如何配置通知频率限制
+6. **端到端流程**: 从事件发送到通知接收的完整流程
 
 ## 下一步
 
 - 尝试修改表达式条件 (例如: `profit_rate > 0.1`)
 - 添加更复杂的表达式 (例如: `profit_rate > 0.05 and profit_amount > 100`)
-- 测试其他通知渠道 (企业微信、邮件)
+- 测试多通道通知 (多个 Telegram 聊天、多个邮件地址)
+- 测试其他通知渠道 (企业微信)
 - 参考 [../02-llm-rule/](../02-llm-rule/) 示例学习 LLM 规则的智能分析能力
