@@ -64,7 +64,7 @@
 
   "notify_policy": {
     "targets": [
-      {"type": "telegram", "user_id": "123456"}
+      {"type": "telegram", "chat_id": "123456"}
     ],
     "rate_limit": {
       "max_per_minute": 5,
@@ -164,8 +164,7 @@
     "targets": [
       {
         "type": "telegram | wecom | email",
-        "user_id": "string",     // telegram
-        "chat_id": "string",     // telegram 群组
+        "chat_id": "string",     // telegram 用户/群组
         "webhook_key": "string", // 企业微信
         "to": ["string"]         // 邮件
       }
@@ -434,7 +433,7 @@ event_types:
 notify_policy:
   targets:
     - type: telegram
-      user_id: "123456"
+      chat_id: "123456"
 ```
 
 **LLM 规则**:
@@ -478,7 +477,7 @@ event_types:
 notify_policy:
   targets:
     - type: telegram
-      user_id: "123456"
+      chat_id: "123456"
     - type: email
       to: ["trader@example.com"]
 ```

@@ -33,7 +33,7 @@ curl -s -X POST "http://127.0.0.1:8000/api/v1/rules" \
       }
     },
     "notify_policy": {
-      "targets": [{ "type": "telegram", "user_id": "123456" }],
+      "targets": [{ "type": "telegram", "chat_id": "123456" }],
       "rate_limit": { "max_per_minute": 5, "cooldown_seconds": 60 }
     }
   }'
@@ -69,7 +69,7 @@ curl -s -X PUT "http://127.0.0.1:8000/api/v1/rules/${rule_id}" \
       "pre_filter": { "type": "expression", "expression": "profit_rate > 0.10" }
     },
     "notify_policy": {
-      "targets": [{ "type": "telegram", "user_id": "123456" }],
+      "targets": [{ "type": "telegram", "chat_id": "123456" }],
       "rate_limit": { "max_per_minute": 5, "cooldown_seconds": 60 }
     }
   }'

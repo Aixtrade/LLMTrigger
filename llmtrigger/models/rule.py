@@ -98,7 +98,6 @@ class NotifyTarget(BaseModel):
     """Notification target configuration."""
 
     type: NotifyTargetType = Field(..., description="Target type")
-    user_id: str | None = Field(default=None, description="Telegram user ID")
     chat_id: str | None = Field(default=None, description="Telegram chat/group ID")
     webhook_key: str | None = Field(default=None, description="WeCom webhook key")
     to: list[str] | None = Field(default=None, description="Email recipients")

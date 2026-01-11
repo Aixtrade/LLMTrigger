@@ -612,7 +612,7 @@
 **通知对象来源**：
 - 来自规则配置的 `notify_policy.targets`
 - 支持多种通知对象格式：
-  - Telegram: `{type: "telegram", user_id: "123"}` 或 `{type: "telegram", chat_id: "-456"}`
+  - Telegram: `{type: "telegram", chat_id: "123"}`
   - 企业微信: `{type: "wecom", webhook_key: "xxx"}`
   - 邮件: `{type: "email", to: ["user@example.com"]}`
 
@@ -626,8 +626,7 @@
 **通道实现**：
 
 #### 3.6.1 Telegram Bot
-- 用户ID推送：`bot.send_message(user_id, message)`
-- 群组推送：`bot.send_message(chat_id, message)`
+- 推送：`bot.send_message(chat_id, message)`
 - 支持Markdown格式
 - 支持按钮和快捷操作
 
@@ -822,7 +821,7 @@
   },
   "event_types": ["trade.profit"],
   "notify_policy": {
-    "targets": [{"type": "telegram", "user_id": "123456"}]
+    "targets": [{"type": "telegram", "chat_id": "123456"}]
   }
 }
 ```
@@ -1020,7 +1019,7 @@ MACD线(15.2)上穿信号线(12.8)，形成金叉。同时成交量(850万)较�
   "notify_policy": {
     "targets": [
       {"type": "email", "to": ["ops@example.com"]},
-      {"type": "telegram", "user_id": "789012"}
+      {"type": "telegram", "chat_id": "789012"}
     ]
   }
 }

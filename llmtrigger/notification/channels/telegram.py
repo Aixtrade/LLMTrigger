@@ -29,7 +29,7 @@ class TelegramChannel(NotificationChannel):
         """Send message via Telegram Bot.
 
         Args:
-            target: Target with user_id or chat_id
+            target: Target with chat_id
             task: Notification task
 
         Returns:
@@ -39,9 +39,9 @@ class TelegramChannel(NotificationChannel):
             logger.warning("Telegram bot not configured")
             return False
 
-        chat_id = target.chat_id or target.user_id
+        chat_id = target.chat_id
         if not chat_id:
-            logger.warning("Telegram target missing chat_id/user_id")
+            logger.warning("Telegram target missing chat_id")
             return False
 
         try:

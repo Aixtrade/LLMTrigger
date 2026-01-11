@@ -66,7 +66,7 @@ def sample_rule_data() -> dict:
             },
         },
         "notify_policy": {
-            "targets": [{"type": "telegram", "user_id": "123456"}],
+            "targets": [{"type": "telegram", "chat_id": "123456"}],
             "rate_limit": {"max_per_minute": 5, "cooldown_seconds": 60},
         },
     }
