@@ -61,7 +61,7 @@ uv run python -m llmtrigger.worker
 
 ## 脚本详情
 
-### quick_test.sh
+### quick_test.sh (Traditional 规则测试)
 
 **功能**: 一键完成端到端测试流程
 
@@ -129,6 +129,89 @@ asyncio.run(send_custom_event(
     }
 ))
 ```
+
+### create_llm_price_rule.sh (LLM 规则创建)
+
+**功能**: 创建 LLM 类型的价格异常告警规则
+
+**用法**:
+```bash
+./scripts/create_llm_price_rule.sh [TELEGRAM_CHAT_ID]
+```
+
+**示例**:
+```bash
+# 使用默认 chat_id (1234567890)
+./scripts/create_llm_price_rule.sh
+
+# 指定自定义 chat_id
+./scripts/create_llm_price_rule.sh 1234567890
+```
+
+**规则特性**:
+- **规则类型**: LLM（纯 LLM 推理）
+- **事件类型**: `price.update`
+- **触发条件**: 当价格在5分钟内快速下跌超过5%时发送告警
+- **触发模式**: `realtime`（实时分析每个事件）
+- **最低置信度**: 0.7
+
+**配合使用**:
+创建规则后，运行 `send_price_events.py` 发送测试事件。
+
+### send_price_events.py (LLM 规则测试)
+
+**功能**: 发送价格更新事件，测试 LLM 规则的时序分析能力
+
+**用法**:
+```bash
+# 使用默认配置
+uv run python scripts/send_price_events.py
+
+# 指定 RabbitMQ URL
+uv run python scripts/send_price_events.py amqp://guest:guest@localhost:5672/
+
+# 指定 URL 和队列名
+uv run python scripts/send_price_events.py amqp://guest:guest@localhost:5672/ trigger_events
+
+# 查看帮助
+uv run python scripts/send_price_events.py --help
+```
+
+**测试场景**:
+1. **场景 1**: BTCUSDT 快速下跌 6%（5分钟）→ **应触发告警** ✓
+   - 从 $50,000 跌至 $47,000
+   - 测试 LLM 识别"快速下跌"的能力
+
+2. **场景 2**: ETHUSDT 缓慢下跌 1.67%（5分钟）→ **不应触发** ✗
+   - 从 $3,000 跌至 $2,950
+   - 测试 LLM 区分"快速"和"缓慢"的能力
+
+3. **场景 3**: SOLUSDT 快速上涨 8%（5分钟）→ **不应触发** ✗
+   - 从 $100 涨至 $108
+   - 测试 LLM 区分"上涨"和"下跌"的能力
+
+4. **场景 4**: BTCUSDT 波动中快速下跌 5.2%（约6分钟）→ **应触发告警** ✓
+   - 价格波动但整体快速下跌
+   - 测试 LLM 识别趋势的能力
+
+**完整测试流程**:
+```bash
+# 步骤 1: 创建 LLM 规则
+./scripts/create_llm_price_rule.sh 1234567890
+
+# 步骤 2: 等待规则生效（2秒）
+
+# 步骤 3: 发送测试事件
+uv run python scripts/send_price_events.py
+
+# 步骤 4: 检查 Telegram 是否收到场景1和场景4的告警
+# 步骤 5: 查看 Worker 日志确认 LLM 推理过程
+```
+
+**预期结果**:
+- 场景 1 和场景 4 应收到 Telegram 告警通知
+- 场景 2 和场景 3 不应收到通知
+- Worker 日志中应显示 LLM 的推理过程和置信度
 
 ## 验证测试结果
 
