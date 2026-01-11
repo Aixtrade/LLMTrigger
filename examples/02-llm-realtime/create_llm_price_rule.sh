@@ -45,7 +45,7 @@ RULE_RESPONSE=$(curl -s -X POST "${API_BASE}/api/v1/rules" \
       \"llm_config\": {
         \"description\": \"当价格在5分钟内快速下跌超过5%时，发送告警\",
         \"trigger_mode\": \"realtime\",
-        \"min_confidence\": 0.7
+        \"confidence_threshold\": 0.7
       }
     },
     \"notify_policy\": {

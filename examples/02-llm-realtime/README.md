@@ -215,7 +215,7 @@ curl -X POST "${OPENAI_BASE_URL}/chat/completions" \
 - 最低置信度设置不当
 
 **解决方案**:
-1. 调整 `min_confidence` 参数 (默认 0.7)
+1. 调整 `confidence_threshold` 参数 (默认 0.7)
 2. 修改规则的 `description` 使其更明确
 3. 更换更强大的 LLM 模型
 
@@ -252,7 +252,7 @@ docker exec llmtrigger-rabbitmq-1 rabbitmqctl purge_queue trigger_events
   "llm_config": {
     "description": "当价格暴跌超过10%或出现异常波动时发送告警",
     "trigger_mode": "realtime",
-    "min_confidence": 0.8
+    "confidence_threshold": 0.8
   }
 }
 ```
@@ -296,7 +296,7 @@ asyncio.run(test_custom_price())
   - 优点: 减少 LLM 调用,降低成本
   - 缺点: 响应延迟,需配置批量大小
 
-### min_confidence 最低置信度
+### confidence_threshold 最低置信度
 
 - 范围: 0.0 - 1.0
 - 建议值: 0.7 - 0.8
@@ -352,7 +352,7 @@ curl -X POST "http://localhost:8000/api/v1/rules" \
       "llm_config": {
         "description": "分析价格变化是否属于异常波动,考虑历史趋势和市场环境",
         "trigger_mode": "realtime",
-        "min_confidence": 0.75
+        "confidence_threshold": 0.75
       }
     },
     "notify_policy": {

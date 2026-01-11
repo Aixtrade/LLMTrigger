@@ -83,6 +83,11 @@ class RedisKeys:
     NOTIFY_DEDUP = "trigger:notify:dedup:{rule_id}:{context_key}"
     NOTIFY_RATE = "trigger:notify:rate:{rule_id}:{minute}"
 
+    # Trigger mode state
+    TRIGGER_BATCH = "trigger:mode:batch:{rule_id}:{context_key}"
+    TRIGGER_LAST_ANALYSIS = "trigger:mode:last:{rule_id}:{context_key}"
+    TRIGGER_INTERVAL_LOCK = "trigger:mode:interval_lock:{rule_id}"
+
     @classmethod
     def rule_detail(cls, rule_id: str) -> str:
         return cls.RULE_DETAIL.format(rule_id=rule_id)
@@ -110,3 +115,15 @@ class RedisKeys:
     @classmethod
     def notify_rate(cls, rule_id: str, minute: str) -> str:
         return cls.NOTIFY_RATE.format(rule_id=rule_id, minute=minute)
+
+    @classmethod
+    def trigger_batch(cls, rule_id: str, context_key: str) -> str:
+        return cls.TRIGGER_BATCH.format(rule_id=rule_id, context_key=context_key)
+
+    @classmethod
+    def trigger_last_analysis(cls, rule_id: str, context_key: str) -> str:
+        return cls.TRIGGER_LAST_ANALYSIS.format(rule_id=rule_id, context_key=context_key)
+
+    @classmethod
+    def trigger_interval_lock(cls, rule_id: str) -> str:
+        return cls.TRIGGER_INTERVAL_LOCK.format(rule_id=rule_id)

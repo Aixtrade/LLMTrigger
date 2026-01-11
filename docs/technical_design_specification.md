@@ -150,9 +150,9 @@
     },
 
     // LLM 规则配置（rule_type = llm 或 hybrid 时）
-    "llm_config": {
+      "llm_config": {
       "description": "string",   // 自然语言规则描述
-      "trigger_mode": "realtime | batch | interval | conditional",
+      "trigger_mode": "realtime | batch | interval",
       "batch_size": "integer",   // batch 模式：批次大小
       "max_wait_seconds": "integer",  // batch 模式：最大等待秒数
       "interval_seconds": "integer",  // interval 模式：间隔秒数

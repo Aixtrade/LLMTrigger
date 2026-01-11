@@ -2,8 +2,9 @@
 
 ## 文档信息
 
-- **文档版本**: v3.0
+- **文档版本**: v4.0
 - **创建日期**: 2026-01-09
+- **最后更新**: 2026-01-11
 - **作者**: aixtrade 团队
 - **状态**: 设计阶段
 
@@ -402,57 +403,142 @@
 }
 ```
 
-#### 3.5.4 LLM触发策略
+#### 3.5.4 规则类型与触发策略
 
-**核心问题**：
-LLM推理成本高（100-200ms延迟），不是每个事件都需要LLM分析。需要设计合理的触发策略来平衡智能性、性能和成本。
+系统设计了两个独立的概念来优化 LLM 使用：**规则类型**（架构层面）和 **触发模式**（执行策略层面）。
 
-**触发模式**：
+---
 
-##### 模式1：混合模式（推荐）⭐
+### 一、规则类型（Rule Type）
 
-传统规则预筛选 + LLM深度分析
+规则类型定义了事件处理的架构模式，决定如何组合传统引擎和 LLM 引擎。
 
+#### 类型1：Traditional（传统规则）
+
+纯基于表达式的规则引擎，不使用 LLM。
+
+```json
+配置示例:
+{
+  "rule_type": "traditional",
+  "pre_filter": {
+    "type": "expression",
+    "expression": "profit_rate > 0.1"
+  }
+}
+
+处理流程:
+事件 → 表达式求值 → 触发/不触发
 ```
+
+**特点**：
+- 执行速度极快（<1ms）
+- 零 LLM 成本
+- 仅支持简单条件判断
+
+**适用场景**：
+- 简单阈值告警（价格 > 50000）
+- 状态检查（status == "failed"）
+
+---
+
+#### 类型2：LLM（智能规则）
+
+纯使用 LLM 进行智能推理，不使用传统规则预筛选。
+
+```json
+配置示例:
+{
+  "rule_type": "llm",
+  "llm_config": {
+    "description": "当价格在5分钟内快速下跌超过5%时发送告警",
+    "trigger_mode": "realtime",
+    "confidence_threshold": 0.7
+  }
+}
+
+处理流程:
+事件 → [触发模式检查] → LLM推理 → 触发/不触发
+```
+
+**特点**：
+- 支持复杂语义理解
+- 理解时序模式和趋势
+- LLM 成本取决于触发模式
+
+**适用场景**：
+- 复杂时序判断（连续3次盈利）
+- 模糊语义（"异常波动"、"快速下跌"）
+- 需要上下文分析的场景
+
+---
+
+#### 类型3：Hybrid（混合规则）⭐ **推荐**
+
+传统规则预筛选 + LLM 深度分析，两阶段处理。
+
+```json
 配置示例:
 {
   "rule_type": "hybrid",
   "pre_filter": {
-    "type": "field_compare",
-    "field": "profit_rate",
-    "operator": ">",
-    "value": 0.05
+    "type": "expression",
+    "expression": "profit_rate > 0.05"
   },
   "llm_config": {
     "description": "连续3次盈利且累计收益超过10%",
     "trigger_mode": "batch",
     "batch_size": 5,
-    "max_wait_seconds": 30
+    "max_wait_seconds": 30,
+    "confidence_threshold": 0.7
   }
 }
 
-执行流程:
-1. 传统规则快速预筛选 (profit_rate > 5%)
-2. 不满足条件的事件直接丢弃
-3. 满足条件的事件累积到批次
-4. 达到batch_size或max_wait_seconds后执行LLM分析
+处理流程:
+事件 → 表达式预筛选 → [不通过:丢弃]
+              ↓ [通过]
+         触发模式检查 → LLM推理 → 触发/不触发
 ```
 
-**优点**：
+**特点**：
 - 大部分无关事件被快速过滤（<1ms）
-- 显著降低LLM调用次数（可减少80-90%）
+- 显著降低 LLM 调用次数（可减少 80-90%）
 - 保留智能分析能力
 
 **适用场景**：
-- 高频事件场景（如价格更新）
-- 需要智能判断但大部分事件不相关
+- 高频事件 + 智能判断（价格更新事件）
+- 需要先初步筛选再深度分析
 
-##### 模式2：批量模式
+---
 
-累积一批事件后统一分析
+### 二、LLM 触发模式（Trigger Mode）
 
+**仅适用于 `llm` 和 `hybrid` 规则类型**。触发模式控制何时执行 LLM 推理，用于优化性能和成本。
+
+#### 模式1：Realtime（实时模式）
+
+每个事件（或通过预筛选的事件）都触发 LLM 分析。
+
+```json
+配置:
+{
+  "trigger_mode": "realtime"
+}
 ```
-配置示例:
+
+- **执行频率**：每个事件
+- **响应延迟**：极低（100-200ms）
+- **LLM成本**：⭐⭐⭐⭐⭐ 很高
+- **适用场景**：低频高价值事件、必须即时响应
+
+---
+
+#### 模式2：Batch（批量模式）
+
+累积事件，达到阈值后批量分析。
+
+```json
+配置:
 {
   "trigger_mode": "batch",
   "batch_size": 10,
@@ -460,113 +546,59 @@ LLM推理成本高（100-200ms延迟），不是每个事件都需要LLM分析�
 }
 
 触发条件:
-- 累积10个事件，或
-- 距上次分析超过60秒
+- 累积 10 个事件，或
+- 距上次分析超过 60 秒
 ```
 
-**优点**：
-- 批量处理提升效率
-- 降低LLM调用频率
+- **执行频率**：低
+- **响应延迟**：中-高（最多 60秒）
+- **LLM成本**：⭐⭐ 低
+- **适用场景**：不需要实时响应、趋势分析
 
-**缺点**：
-- 响应延迟（最多60秒）
+---
 
-**适用场景**：
-- 不需要实时响应
-- 趋势分析类规则
+#### 模式3：Interval（间隔模式）
 
-##### 模式3：时间窗口模式
+定期分析上下文窗口，不论是否有新事件。
 
-定期分析上下文窗口
-
-```
-配置示例:
+```json
+配置:
 {
   "trigger_mode": "interval",
   "interval_seconds": 30
 }
 
 执行策略:
-- 每30秒分析一次当前上下文
-- 不论是否有新事件
+- 每 30 秒分析一次当前上下文
 ```
 
-**优点**：
-- 可预测的执行频率
-- 适合周期性监控
+- **执行频率**：固定周期
+- **响应延迟**：固定（30秒）
+- **LLM成本**：⭐⭐ 低
+- **适用场景**：周期性监控、趋势检测
 
-**适用场景**：
-- 趋势监控（如"5分钟内快速下跌"）
-- 定期健康检查
+---
 
-##### 模式4：实时模式
+### 三、策略对比与推荐
 
-每个事件都触发LLM分析
+#### 触发模式对比表
 
-```
-配置示例:
-{
-  "trigger_mode": "realtime"
-}
-```
+| 触发模式 | 执行频率 | 响应延迟 | LLM成本 | 适用场景 |
+|---------|---------|---------|---------|----------|
+| Realtime | 高 | 极低 | ⭐⭐⭐⭐⭐ 很高 | 低频高价值事件 |
+| Batch | 低 | 中-高 | ⭐⭐ 低 | 趋势分析、批量处理 |
+| Interval | 固定 | 固定 | ⭐⭐ 低 | 周期性监控 |
 
-**优点**：
-- 最及时的响应
+#### 推荐配置
 
-**缺点**：
-- 高频场景性能差
-- LLM调用成本高
-
-**适用场景**：
-- 低频高价值事件
-- 必须即时响应的场景
-- **慎用**：高频场景会导致性能瓶颈
-
-##### 模式5：条件触发模式
-
-基于上下文状态决定是否触发
-
-```
-配置示例:
-{
-  "trigger_mode": "conditional",
-  "trigger_conditions": {
-    "min_events_in_window": 3,
-    "context_change_threshold": 0.1
-  }
-}
-
-触发条件:
-- 上下文窗口内至少3个事件，且
-- 上下文变化幅度超过10%
-```
-
-**优点**：
-- 智能判断是否需要分析
-- 避免无效的LLM调用
-
-**适用场景**：
-- 需要足够上下文才能判断
-- 静态期不需要分析
-
-**触发策略对比**：
-
-| 模式 | 执行频率 | 响应延迟 | LLM成本 | 适用场景 |
-|------|---------|---------|---------|----------|
-| 混合模式 | 低（预筛选后） | 低-中 | ⭐ 很低 | 高频事件 + 智能判断 |
-| 批量模式 | 低 | 中-高 | ⭐⭐ 低 | 不需要实时响应 |
-| 时间窗口 | 固定 | 固定 | ⭐⭐ 低 | 周期性监控 |
-| 实时模式 | 高 | 极低 | ⭐⭐⭐⭐⭐ 很高 | 低频高价值事件 |
-| 条件触发 | 低-中 | 中 | ⭐⭐ 低 | 智能触发判断 |
-
-**推荐配置**：
-
-对于不同场景：
-- **交易盈利告警**：混合模式（预筛选 profit_rate > 5%）
-- **价格异常检测**：批量模式（每10个事件或30秒）
-- **技术指标分析**：时间窗口模式（每30秒）
-- **重大事件告警**：实时模式
-- **系统监控**：条件触发模式（窗口内至少3个事件）
+| 场景 | 规则类型 | 触发模式 | 配置示例 |
+|------|---------|---------|----------|
+| **交易盈利告警** | Hybrid | Batch | `pre_filter: profit_rate > 0.05`<br>`trigger_mode: batch, batch_size: 5` |
+| **价格异常检测** | LLM | Batch | `trigger_mode: batch, batch_size: 10, max_wait_seconds: 30` |
+| **技术指标分析** | LLM | Interval | `trigger_mode: interval, interval_seconds: 30` |
+| **重大事件告警** | LLM | Realtime | `trigger_mode: realtime` |
+| **系统监控** | LLM | Interval | `trigger_mode: interval, interval_seconds: 30` |
+| **简单阈值告警** | Traditional | - | 仅 `pre_filter`，无 LLM |
 
 ### 3.6 通知推送层
 
@@ -771,14 +803,33 @@ LLM推理成本高（100-200ms延迟），不是每个事件都需要LLM分析�
 当交易策略连续盈利3次且累计收益超过10%时，通过Telegram通知用户。
 
 **配置**：
+```json
+{
+  "name": "连续盈利告警",
+  "rule_config": {
+    "rule_type": "hybrid",
+    "pre_filter": {
+      "type": "expression",
+      "expression": "profit_rate > 0.05"
+    },
+    "llm_config": {
+      "description": "当策略连续3次盈利且累计收益超过10%时，通知我",
+      "trigger_mode": "batch",
+      "batch_size": 5,
+      "max_wait_seconds": 30,
+      "confidence_threshold": 0.7
+    }
+  },
+  "event_types": ["trade.profit"],
+  "notify_policy": {
+    "targets": [{"type": "telegram", "user_id": "123456"}]
+  }
+}
 ```
-规则类型: LLM
-规则描述: 当策略连续3次盈利且累计收益超过10%时，通知我
-事件类型: trade.profit
-通知对象:
-  - type: telegram
-    user_id: "123456"
-```
+
+**策略说明**：
+- **规则类型**：Hybrid（混合）- 先过滤盈利率 > 5% 的事件
+- **触发模式**：Batch（批量）- 累积 5 个事件或等待 30 秒后分析
 
 **消息示例**：
 ```json
@@ -819,16 +870,31 @@ LLM推理成本高（100-200ms延迟），不是每个事件都需要LLM分析�
 当价格在5分钟内快速下跌超过5%时，通过企业微信和邮件同时通知团队。
 
 **配置**：
+```json
+{
+  "name": "价格快速下跌告警",
+  "rule_config": {
+    "rule_type": "llm",
+    "llm_config": {
+      "description": "当价格在5分钟内快速下跌超过5%时，发送告警",
+      "trigger_mode": "interval",
+      "interval_seconds": 30,
+      "confidence_threshold": 0.7
+    }
+  },
+  "event_types": ["price.update"],
+  "notify_policy": {
+    "targets": [
+      {"type": "wecom", "webhook_key": "xxxxxx"},
+      {"type": "email", "to": ["team@example.com"]}
+    ]
+  }
+}
 ```
-规则类型: LLM
-规则描述: 当价格在5分钟内快速下跌超过5%时，发送告警
-事件类型: price.update
-通知对象:
-  - type: wecom
-    webhook_key: "xxxxxx"
-  - type: email
-    to: ["team@example.com"]
-```
+
+**策略说明**：
+- **规则类型**：LLM（智能）- 纯 LLM 分析价格趋势
+- **触发模式**：Interval（间隔）- 每 30 秒分析一次价格走势
 
 **消息示例**：
 ```json
@@ -872,14 +938,27 @@ LLM推理成本高（100-200ms延迟），不是每个事件都需要LLM分析�
 当MACD出现金叉且成交量明显放大时，通知交易群组。
 
 **配置**：
+```json
+{
+  "name": "MACD金叉信号",
+  "rule_config": {
+    "rule_type": "llm",
+    "llm_config": {
+      "description": "当MACD出现金叉且成交量明显放大时，通知我",
+      "trigger_mode": "realtime",
+      "confidence_threshold": 0.8
+    }
+  },
+  "event_types": ["indicator.update"],
+  "notify_policy": {
+    "targets": [{"type": "telegram", "chat_id": "-1001234567890"}]
+  }
+}
 ```
-规则类型: LLM
-规则描述: 当MACD出现金叉且成交量明显放大时，通知我
-事件类型: indicator.update
-通知对象:
-  - type: telegram
-    chat_id: "-1001234567890"
-```
+
+**策略说明**：
+- **规则类型**：LLM（智能）- 理解技术指标的语义
+- **触发模式**：Realtime（实时）- 指标更新频率低，需要即时响应
 
 **消息示例**：
 ```json
@@ -924,19 +1003,32 @@ MACD线(15.2)上穿信号线(12.8)，形成金叉。同时成交量(850万)较�
 ### 5.4 场景4：系统监控告警
 
 **业务需求**：
-当系统CPU使用率持续5分钟超过80%时，通知运维团队。
+当系统CPU使用率超过80%时，立即通知运维团队。
 
 **配置**：
+```json
+{
+  "name": "CPU使用率告警",
+  "rule_config": {
+    "rule_type": "traditional",
+    "pre_filter": {
+      "type": "expression",
+      "expression": "cpu_usage > 0.8"
+    }
+  },
+  "event_types": ["system.metrics"],
+  "notify_policy": {
+    "targets": [
+      {"type": "email", "to": ["ops@example.com"]},
+      {"type": "telegram", "user_id": "789012"}
+    ]
+  }
+}
 ```
-规则类型: 传统规则
-规则条件: cpu_usage > 0.8
-事件类型: system.metrics
-通知对象:
-  - type: email
-    to: ["ops@example.com"]
-  - type: telegram
-    user_id: "789012"
-```
+
+**策略说明**：
+- **规则类型**：Traditional（传统）- 简单阈值判断，无需 LLM
+- **触发模式**：无 - 传统规则直接触发
 
 **消息示例**：
 ```json
@@ -1094,6 +1186,7 @@ MACD线(15.2)上穿信号线(12.8)，形成金叉。同时成交量(850万)较�
 | v1.0 | 2026-01-09 | aixtrade 团队 | 初始版本 |
 | v2.0 | 2026-01-09 | aixtrade 团队 | 重构为独立服务架构，简化文档 |
 | v3.0 | 2026-01-10 | aixtrade 团队 | 增加 API 管理层、Redis 存储层、可观测性层设计；完善通知可靠性机制 |
+| v4.0 | 2026-01-11 | aixtrade 团队 | **重大修订**：明确区分**规则类型**（traditional/llm/hybrid）和**触发模式**（realtime/batch/interval）；实现完整的 trigger_mode 功能；更新所有场景示例 |
 
 ---
 

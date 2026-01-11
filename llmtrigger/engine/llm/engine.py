@@ -12,6 +12,7 @@ from llmtrigger.core.config import get_settings
 from llmtrigger.core.logging import get_logger
 from llmtrigger.engine.llm.parser import LLMDecision, parse_llm_response
 from llmtrigger.engine.llm.prompt import build_prompt
+from llmtrigger.engine.llm.trigger_mode import TriggerDecision, TriggerModeManager
 from llmtrigger.engine.traditional import EvaluationResult
 from llmtrigger.models.event import Event
 from llmtrigger.models.rule import Rule
@@ -40,6 +41,7 @@ class LLMEngine:
         self._cache = LLMCacheStore(redis) if redis else None
         self._context_store = ContextStore(redis) if redis else None
         self._summarizer = ContextSummarizer()
+        self._trigger_manager = TriggerModeManager(redis) if redis else None
 
     async def evaluate(self, event: Event, rule: Rule) -> EvaluationResult:
         """Evaluate an event against an LLM rule.
@@ -56,6 +58,41 @@ class LLMEngine:
             return EvaluationResult(
                 should_trigger=False,
                 reason="Missing LLM configuration",
+            )
+
+        # Check trigger mode before LLM analysis
+        if self._trigger_manager:
+            trigger_result = await self._trigger_manager.should_trigger(event, rule)
+
+            if trigger_result.decision == TriggerDecision.SKIP:
+                logger.debug(
+                    "Trigger mode skip",
+                    rule_id=rule.rule_id,
+                    mode=llm_config.trigger_mode.value,
+                    reason=trigger_result.reason,
+                )
+                return EvaluationResult(
+                    should_trigger=False,
+                    reason=f"Trigger mode: {trigger_result.reason}",
+                )
+
+            if trigger_result.decision == TriggerDecision.PENDING:
+                logger.debug(
+                    "Trigger mode pending",
+                    rule_id=rule.rule_id,
+                    mode=llm_config.trigger_mode.value,
+                    reason=trigger_result.reason,
+                )
+                return EvaluationResult(
+                    should_trigger=False,
+                    reason=f"Trigger mode: {trigger_result.reason}",
+                )
+
+            logger.debug(
+                "Trigger mode activated",
+                rule_id=rule.rule_id,
+                mode=llm_config.trigger_mode.value,
+                reason=trigger_result.reason,
             )
 
         start_time = time.time()
@@ -128,6 +165,10 @@ class LLMEngine:
                     "reason": decision.reason,
                 },
             )
+
+        # Mark analysis complete for trigger mode tracking
+        if self._trigger_manager:
+            await self._trigger_manager.mark_analyzed(rule, event.context_key)
 
         return EvaluationResult(
             should_trigger=decision.should_trigger,

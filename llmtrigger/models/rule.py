@@ -21,7 +21,6 @@ class TriggerMode(str, Enum):
     REALTIME = "realtime"
     BATCH = "batch"
     INTERVAL = "interval"
-    CONDITIONAL = "conditional"
 
 
 class NotifyTargetType(str, Enum):
@@ -44,20 +43,23 @@ class LLMConfig(BaseModel):
 
     description: str = Field(..., description="Natural language rule description")
     trigger_mode: TriggerMode = Field(
-        default=TriggerMode.BATCH,
+        default=TriggerMode.REALTIME,
         description="LLM trigger mode",
     )
+    # Batch mode settings
     batch_size: int = Field(default=5, ge=1, description="Batch size for batch mode")
     max_wait_seconds: int = Field(
         default=30,
         ge=1,
         description="Max wait seconds for batch mode",
     )
+    # Interval mode settings
     interval_seconds: int = Field(
         default=30,
         ge=1,
         description="Interval seconds for interval mode",
     )
+    # Common settings
     confidence_threshold: float = Field(
         default=0.7,
         ge=0.0,
