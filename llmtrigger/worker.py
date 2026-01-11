@@ -27,6 +27,7 @@ class WorkerManager:
         self._consumer: RabbitMQConsumer | None = None
         self._notification_worker: NotificationWorker | None = None
         self._shutdown_event = asyncio.Event()
+        self._tasks: list[asyncio.Task[Any]] = []
 
     async def start(self) -> None:
         """Start all worker processes."""
@@ -42,10 +43,13 @@ class WorkerManager:
 
         # Start workers concurrently
         try:
-            await asyncio.gather(
-                self._run_consumer(),
-                self._run_notification_worker(),
-            )
+            # Create tasks and save references
+            consumer_task = asyncio.create_task(self._run_consumer())
+            notification_task = asyncio.create_task(self._run_notification_worker())
+            self._tasks = [consumer_task, notification_task]
+
+            # Wait for all tasks to complete
+            await asyncio.gather(*self._tasks, return_exceptions=True)
         finally:
             await self._cleanup()
 
@@ -77,6 +81,15 @@ class WorkerManager:
         if self._notification_worker:
             self._notification_worker.stop()
         self._shutdown_event.set()
+
+        # Cancel all running tasks
+        for task in self._tasks:
+            if not task.done():
+                task.cancel()
+
+        # Wait for tasks to be cancelled
+        if self._tasks:
+            await asyncio.gather(*self._tasks, return_exceptions=True)
 
     async def _cleanup(self) -> None:
         """Clean up resources."""
