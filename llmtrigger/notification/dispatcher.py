@@ -111,26 +111,32 @@ class NotificationDispatcher:
             result: Evaluation result
 
         Returns:
-            Formatted message
+            Formatted message (HTML format for Telegram)
         """
+        import html
+
+        # Escape HTML special characters
+        def escape(text: Any) -> str:
+            return html.escape(str(text))
+
         lines = [
-            f"**{rule.name}**",
+            f"🔔 <b>{escape(rule.name)}</b>",
             "",
-            f"**Trigger Time:** {event.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
-            f"**Event Type:** {event.event_type}",
+            f"⏰ <b>触发时间:</b> {event.timestamp.strftime('%Y-%m-%d %H:%M:%S')}",
+            f"📌 <b>事件类型:</b> {escape(event.event_type)}",
             "",
-            "**Decision:**",
-            result.reason,
+            f"💡 <b>触发原因:</b>",
+            f"{escape(result.reason)}",
         ]
 
         if result.confidence:
-            lines.append(f"**Confidence:** {result.confidence:.0%}")
+            lines.append(f"📊 <b>置信度:</b> {result.confidence:.0%}")
 
         # Add event data summary
         if event.data:
             lines.append("")
-            lines.append("**Event Data:**")
+            lines.append("📦 <b>事件数据:</b>")
             for key, value in list(event.data.items())[:5]:  # Limit fields
-                lines.append(f"- {key}: {value}")
+                lines.append(f"  • {escape(key)}: {escape(value)}")
 
         return "\n".join(lines)

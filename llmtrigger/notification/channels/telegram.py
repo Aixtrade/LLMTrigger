@@ -48,7 +48,7 @@ class TelegramChannel(NotificationChannel):
             await self._bot.send_message(
                 chat_id=chat_id,
                 text=task.message,
-                parse_mode="Markdown",
+                parse_mode="HTML",
             )
             logger.info("Telegram message sent", chat_id=chat_id, task_id=task.task_id)
             return True
