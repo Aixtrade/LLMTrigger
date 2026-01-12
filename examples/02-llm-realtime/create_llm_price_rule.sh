@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # 创建 LLM 价格异常告警规则
 #
-# 用法: ./scripts/create_llm_price_rule.sh [YOUR_TELEGRAM_CHAT_ID]
-# 示例: ./scripts/create_llm_price_rule.sh 1234567890
+# 用法: ./examples/02-llm-realtime/create_llm_price_rule.sh [YOUR_TELEGRAM_CHAT_ID]
+# 示例: ./examples/02-llm-realtime/create_llm_price_rule.sh 1234567890
 
 set -euo pipefail
 
@@ -92,7 +92,7 @@ echo "  - 触发条件: 价格在5分钟内快速下跌超过5%"
 echo ""
 echo "🚀 下一步:"
 echo "  运行测试脚本发送价格事件:"
-echo "  ./scripts/send_price_events.py"
+echo "  uv run python examples/02-llm-realtime/send_price_events.py"
 echo ""
 echo "🧹 清理规则:"
 echo "  curl -X DELETE '${API_BASE}/api/v1/rules/${RULE_ID}'"

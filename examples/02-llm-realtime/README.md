@@ -15,7 +15,7 @@
 ## 文件说明
 
 ```
-02-llm-rule/
+02-llm-realtime/
 ├── README.md                   # 本文件
 ├── create_llm_price_rule.sh    # 规则创建脚本
 └── send_price_events.py        # 测试事件发送脚本
@@ -70,13 +70,13 @@ uv run python -m llmtrigger.worker
 
 ```bash
 # 步骤 1: 创建 LLM 规则 (在项目根目录执行)
-./examples/02-llm-rule/create_llm_price_rule.sh [YOUR_TELEGRAM_CHAT_ID]
+./examples/02-llm-realtime/create_llm_price_rule.sh [YOUR_TELEGRAM_CHAT_ID]
 
 # 示例:
-./examples/02-llm-rule/create_llm_price_rule.sh 1234567890
+./examples/02-llm-realtime/create_llm_price_rule.sh 1234567890
 
 # 步骤 2: 发送测试事件
-uv run python examples/02-llm-rule/send_price_events.py
+uv run python examples/02-llm-realtime/send_price_events.py
 
 # 步骤 3: 检查 Telegram 是否收到场景1和场景4的告警
 # 步骤 4: 查看 Worker 日志确认 LLM 推理过程
@@ -88,10 +88,10 @@ uv run python examples/02-llm-rule/send_price_events.py
 
 ```bash
 # 使用默认配置
-uv run python examples/02-llm-rule/send_price_events.py
+uv run python examples/02-llm-realtime/send_price_events.py
 
 # 或指定自定义 RabbitMQ 配置
-uv run python examples/02-llm-rule/send_price_events.py amqp://user:pass@host:5672/ queue_name
+uv run python examples/02-llm-realtime/send_price_events.py amqp://user:pass@host:5672/ queue_name
 ```
 
 ## 测试场景详解
