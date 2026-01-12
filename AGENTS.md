@@ -1,163 +1,150 @@
-# LLMTrigger Developer Guidelines
+# LLMTrigger Agent Guide
 
-## 1. Project Overview & Architecture
+## 1. Purpose
+- This file guides agentic coding assistants working in this repo.
+- Follow instructions in more specific `AGENTS.md` files if present.
+- Keep changes minimal and focused.
 
-LLMTrigger is a hybrid intelligent event trigger system combining a traditional rules engine with LLM-based reasoning. It ingests events via RabbitMQ, processes them using a hybrid engine (Expression + LLM), and dispatches notifications via various channels (Email, Telegram, WeCom).
+## 2. Tech Stack
+- Python 3.12+, FastAPI, aio-pika (RabbitMQ), redis.asyncio, OpenAI API.
+- Package manager: `uv`.
+- Tests: `pytest` + `pytest-asyncio`.
+- Lint/format: `ruff`; typing: `mypy`.
 
-### Key Technologies
-- **Runtime**: Python 3.12+
-- **Web Framework**: FastAPI
-- **Message Broker**: RabbitMQ (`aio-pika`)
-- **State Store**: Redis (`redis-py`)
-- **LLM**: OpenAI API integration
-- **Package Manager**: `uv`
+## 3. Repo Layout
+- `llmtrigger/` main package
+- `llmtrigger/api/` FastAPI routes (`/rules`, `/history`, `/test`)
+- `llmtrigger/core/` config + logging
+- `llmtrigger/engine/` traditional + LLM logic
+- `llmtrigger/engine/llm/` prompts + parsing
+- `llmtrigger/messaging/` RabbitMQ consumers
+- `llmtrigger/notification/` dispatch + channels
+- `llmtrigger/storage/` Redis persistence
+- `tests/unit/` unit tests
+- `tests/integration/` integration tests
 
-### Directory Structure
-- `llmtrigger/`: Main package
-  - `api/`: FastAPI application and routes (`/rules`, `/history`, `/test`)
-  - `core/`: Configuration (`config.py`) and logging setup
-  - `engine/`: Rule evaluation logic
-    - `traditional.py`: Expression-based filtering (`simpleeval`)
-    - `llm/`: LLM reasoning engine, prompts, and parsing
-    - `router.py`: Routes events to engines based on rule type
-  - `messaging/`: RabbitMQ consumer and event handlers
-  - `notification/`: Notification dispatching and channel implementations
-  - `storage/`: Redis persistence layers (`rule_store`, `context_store`)
-- `tests/`: Test suite
-  - `unit/`: Component-level tests
-  - `integration/`: End-to-end flow tests
+## 4. Setup & Services
+- Install deps (dev): `uv sync --dev`
+- Start infra: `docker-compose up -d redis rabbitmq`
+- Stop infra: `docker-compose down`
+- Copy env: `cp .env.example .env`
+- Fill `REDIS_URL`, `RABBITMQ_URL`, `OPENAI_API_KEY`
 
-## 2. Development Workflow & Commands
+## 5. Run Locally
+- API (dev): `uv run uvicorn llmtrigger.api.app:app --reload`
+- Worker: `uv run python -m llmtrigger.worker`
+- Optional: set `LOG_LEVEL=DEBUG` for verbose logs
 
-### Setup & Dependencies
-Manage dependencies using `uv`.
-```bash
-# Install dependencies (including dev)
-uv sync --dev
+## 6. Tests
+- All tests: `uv run pytest`
+- Single file: `uv run pytest tests/unit/test_expression.py`
+- Single test: `uv run pytest tests/unit/test_expression.py::test_evaluate_simple_expression`
+- Markers: use `@pytest.mark.asyncio` for async tests
+- Coverage: `uv run pytest --cov=llmtrigger --cov-report=html`
 
-# Start infrastructure (Redis & RabbitMQ)
-docker-compose up -d redis rabbitmq
+## 7. Lint & Format
+- Lint: `uv run ruff check llmtrigger/`
+- Format: `uv run ruff format llmtrigger/`
+- Type check: `uv run mypy llmtrigger/`
+- Run format before lint when unsure
 
-# Configure environment
-cp .env.example .env
-# Edit .env to set REDIS_URL, RABBITMQ_URL, and OPENAI_API_KEY
-```
+## 8. Code Style
+- Indentation: 4 spaces, no tabs.
+- Formatting: follow PEP 8; use `ruff format`.
+- Imports: absolute imports preferred; keep sorted (isort compatible).
+- Avoid wildcard imports.
+- Keep functions small and single-purpose.
+- Avoid unnecessary abstraction or cleverness.
 
-### Running Services
-The system comprises an API service and a Worker service.
+### Typing
+- Type hints required for public functions, methods, and class attributes.
+- Use explicit return types for public functions.
+- Prefer `typing` primitives (`list`, `dict`, `tuple`) with generics.
+- Use `Optional[T]`/`T | None` consistently.
+- Avoid `Any` unless unavoidable; document why.
 
-```bash
-# Start FastAPI API (Dev mode with hot reload)
-uv run uvicorn llmtrigger.api.app:app --reload
+### Naming
+- Files/modules: `snake_case.py`
+- Classes: `PascalCase`
+- Functions/variables: `snake_case`
+- Constants: `UPPER_SNAKE_CASE`
+- Avoid one-letter names except for tight scopes.
+- Use descriptive parameter names for external APIs.
 
-# Start Background Worker (Consumes events & sends notifications)
-uv run python -m llmtrigger.worker
-```
+### Async & IO
+- Prefer async APIs for IO (`aio-pika`, `redis.asyncio`).
+- Do not block the event loop with sync IO or heavy CPU work.
+- Use `await` for network/database calls.
+- Use `asyncio.create_task` carefully; track lifecycle.
+- Tests for async code must use `@pytest.mark.asyncio`.
 
-### Testing
-Tests are built with `pytest` and `pytest-asyncio`.
+### Configuration & Secrets
+- Never hardcode secrets or URLs.
+- Read settings from `llmtrigger.core.config.settings`.
+- Add new settings to config module + `.env.example`.
+- Keep defaults sensible for local development.
 
-```bash
-# Run all tests
-uv run pytest
+### Error Handling & Logging
+- Raise specific exceptions; avoid bare `Exception`.
+- API layer: use FastAPI `HTTPException` for client errors.
+- Worker/consumer: catch exceptions to avoid crashing loop.
+- Log with `structlog` via `llmtrigger.core` logger.
+- Include context fields (rule_id, event_id) when logging.
 
-# Run a single test file
-uv run pytest tests/unit/test_expression.py
+### LLM Integration
+- Keep prompts in `llmtrigger/engine/llm/`.
+- Avoid leaking secrets into prompts.
+- Parse model responses defensively; validate outputs.
 
-# Run a specific test function
-uv run pytest tests/unit/test_expression.py::test_evaluate_simple_expression
+### Storage & Messaging
+- Redis access should be async and pooled.
+- RabbitMQ consumers must ack/nack appropriately.
+- Handle transient network failures with retries/backoff.
 
-# Run with coverage report
-uv run pytest --cov=llmtrigger --cov-report=html
-```
+### Testing Guidance
+- Keep tests deterministic; avoid network calls without mocks.
+- Use fixtures where possible; prefer focused unit tests.
+- Mark integration tests clearly under `tests/integration`.
+- Prefer testing behavior over implementation details.
 
-### Linting & Formatting
-Enforce code quality standards using `ruff` and `mypy`.
+## 9. Feature Notes
+### New Rule Types
+- Update validation in `models/rule.py`.
+- Add routing in `llmtrigger/engine/router.py`.
+- Ensure any new config fields are documented.
 
-```bash
-# Check code style and common errors
-uv run ruff check llmtrigger/
+### New Notification Channels
+- Add a new module under `llmtrigger/notification/channels/`.
+- Implement `BaseNotificationChannel.send`.
+- Register in `NotifyTargetType` and dispatcher.
+- Add unit tests for channel behavior when feasible.
 
-# Auto-format code
-uv run ruff format llmtrigger/
+## 10. Agent Workflow
+- Prefer Chinese (中文) for communication and PR summaries.
+- Code comments/docstrings should be English.
+- Use absolute paths in tool calls.
+- Verify working directory with `pwd` if needed.
+- If imports fail, run `uv sync --dev`.
+- Do not create extra docs unless requested.
+- Avoid touching unrelated files.
 
-# Type checking (Optional but recommended)
-uv run mypy llmtrigger/
-```
+## 11. Git & PR Expectations
+- Commit messages: sentence-case English or Chinese.
+- PRs should include summary and test commands run.
+- Mention any config changes or new env vars.
+- Do not amend commits unless explicitly requested.
 
-## 3. Code Style & Conventions
+## 12. Env Var Reference
+- `REDIS_URL` default `redis://localhost:6379/0`
+- `RABBITMQ_URL` default `amqp://guest:guest@localhost:5672/`
+- `OPENAI_API_KEY` required for LLM features
+- `OPENAI_MODEL` default `gpt-4-turbo-preview`
+- `LOG_LEVEL` default `INFO`
 
-### General Guidelines
-- **Indentation**: Use **4 spaces**. No tabs.
-- **Formatting**: Adhere to PEP 8 standards. Use `ruff format` to ensure compliance.
-- **Imports**: Prefer explicit absolute imports (e.g., `from llmtrigger.core.config import settings`). Sort imports using standard tools (isort compatible).
-- **Paths**: Always use **absolute paths** when performing file operations in your agent tools.
+## 13. Docs & Comments
+- Keep docstrings short and in English.
+- Update README or docs only when requested.
+- Avoid inline comments unless needed for clarity.
 
-### Typing & Naming
-- **Type Hints**: **Mandatory** for all public functions, methods, and class attributes.
-- **Modules/Files**: `snake_case.py`
-- **Classes**: `PascalCase`
-- **Functions/Variables**: `snake_case`
-- **Constants**: `UPPER_SNAKE_CASE`
-
-### Async/Await
-- This project is heavily asynchronous (`async`/`await`).
-- Use `aio-pika` for RabbitMQ and `redis.asyncio` for Redis.
-- Ensure all I/O bound operations are non-blocking.
-- Tests must be marked with `@pytest.mark.asyncio`.
-
-### Configuration
-- Do **not** hardcode values. Use `llmtrigger.core.config.settings`.
-- Secrets (API keys, passwords) must come from environment variables.
-
-## 4. Feature Implementation Guidelines
-
-### Adding a New Rule Type
-The system supports `TRADITIONAL`, `LLM`, and `HYBRID` rule types.
-- Ensure `models/rule.py` validation logic supports any new configuration fields.
-- Update `engine/router.py` to handle routing for the new type.
-
-### Adding a Notification Channel
-1. Create a new file in `llmtrigger/notification/channels/` (e.g., `slack.py`).
-2. Create a class inheriting from `BaseNotificationChannel`.
-3. Implement the `send` method.
-4. Add the new type to the `NotifyTargetType` enum.
-5. Register the channel in `llmtrigger/notification/dispatcher.py`.
-
-### Error Handling
-- Use specific exceptions where possible.
-- Log errors using `structlog` (configured in `core`).
-- For the API, use FastAPI's `HTTPException` for client errors.
-- Ensure the Worker process catches exceptions to prevent crashing the consumer loop.
-
-## 5. Agent Interaction Guidelines
-
-- **Communication Language**: **Chinese (中文)** is preferred for communication (chat, PR descriptions). Code comments and documentation strings should be in **English**.
-- **Tool Usage**: 
-  - Always verify your current directory (`pwd`) or use absolute paths.
-  - Run `uv sync --dev` if you encounter import errors to ensure the environment is up-to-date.
-  - If a test fails, analyze the output carefully before attempting a fix.
-  - When creating files, ensure the directory structure exists.
-
-## 6. Git & Commit Protocol
-
-- **Commit Messages**: Use clear, sentence-case English or Chinese.
-  - Good: "Fix retry logic in notification worker"
-  - Good: "修复通知重试逻辑中的死循环问题"
-- **Pull Requests**:
-  - Include a summary of changes.
-  - List commands used to verify the changes (e.g., specific test runs).
-  - Mention any configuration changes required.
-
-## 7. Configuration Reference (Key Variables)
-
-| Variable | Description | Default |
-|----------|-------------|---------|
-| `REDIS_URL` | Redis Connection String | `redis://localhost:6379/0` |
-| `RABBITMQ_URL` | RabbitMQ Connection String | `amqp://guest:guest@localhost:5672/` |
-| `OPENAI_API_KEY` | OpenAI API Key | Required for LLM features |
-| `OPENAI_MODEL` | Model ID | `gpt-4-turbo-preview` |
-| `LOG_LEVEL` | Logging verbosity | `INFO` |
-
----
-*This file is intended to guide AI agents and developers in maintaining the LLMTrigger codebase.*
+## 14. Cursor/Copilot Rules
+- No `.cursor/rules`, `.cursorrules`, or Copilot instructions found.
