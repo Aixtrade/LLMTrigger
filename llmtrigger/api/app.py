@@ -5,6 +5,7 @@ from typing import AsyncIterator
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 
 from llmtrigger.api.routes import history, rules, test
@@ -44,6 +45,14 @@ def create_app() -> FastAPI:
         version=settings.app_version,
         description="Hybrid Intelligent Event Trigger System",
         lifespan=lifespan,
+    )
+
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=False,
+        allow_methods=["*"],
+        allow_headers=["*"],
     )
 
     # Include routers
