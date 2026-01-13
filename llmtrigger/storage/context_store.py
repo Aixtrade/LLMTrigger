@@ -34,7 +34,12 @@ class ContextStore:
         entry = json.dumps(event.to_context_entry())
         await self.redis.zadd(key, {entry: timestamp_ms})
 
-        # Set key expiration (rely on Redis TTL instead of manual cleanup)
+        # Trim to keep only the most recent N events (by rank, not by time)
+        # This avoids timezone issues with event.timestamp
+        max_events = self._settings.context_max_events
+        await self.redis.zremrangebyrank(key, 0, -(max_events + 1))
+
+        # Set key expiration as fallback for abandoned context keys
         ttl = self._settings.context_window_seconds + 60
         await self.redis.expire(key, ttl)
 
