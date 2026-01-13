@@ -1,7 +1,7 @@
 """Rule management API routes."""
 
 import uuid
-from datetime import datetime
+from datetime import datetime, timezone
 
 from fastapi import APIRouter, HTTPException, Query
 
@@ -25,7 +25,7 @@ async def create_rule(
     store: RuleStoreDep,
 ) -> APIResponse[RuleCreateResponse]:
     """Create a new rule."""
-    rule_id = f"rule_{datetime.utcnow().strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}"
+    rule_id = f"rule_{datetime.now(timezone.utc).strftime('%Y%m%d')}_{uuid.uuid4().hex[:8]}"
 
     rule = Rule(
         rule_id=rule_id,

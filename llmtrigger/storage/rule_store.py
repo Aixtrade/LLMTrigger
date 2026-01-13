@@ -1,7 +1,7 @@
 """Rule storage operations."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from redis.asyncio import Redis
 
@@ -88,7 +88,7 @@ class RuleStore:
             return None
 
         # Update metadata
-        rule.metadata.updated_at = datetime.utcnow()
+        rule.metadata.updated_at = datetime.now(timezone.utc)
         rule.metadata.version = existing.metadata.version + 1
 
         key = RedisKeys.rule_detail(rule_id)
@@ -196,7 +196,7 @@ class RuleStore:
             return False
 
         rule.enabled = enabled
-        rule.metadata.updated_at = datetime.utcnow()
+        rule.metadata.updated_at = datetime.now(timezone.utc)
 
         key = RedisKeys.rule_detail(rule_id)
         await self.redis.hset(
@@ -234,6 +234,6 @@ class RuleStore:
         message = json.dumps({
             "action": action,
             "rule_id": rule_id,
-            "timestamp": int(datetime.utcnow().timestamp() * 1000),
+            "timestamp": int(datetime.now(timezone.utc).timestamp() * 1000),
         })
         await self.redis.publish(RedisKeys.RULE_UPDATE_CHANNEL, message)

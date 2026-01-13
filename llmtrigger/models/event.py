@@ -1,6 +1,6 @@
 """Event domain models."""
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -16,8 +16,8 @@ class Event(BaseModel):
         description="Context grouping key, e.g., 'trade.profit.BTCUSDT.MACD_Strategy'",
     )
     timestamp: datetime = Field(
-        default_factory=datetime.utcnow,
-        description="Event timestamp",
+        default_factory=lambda: datetime.now(timezone.utc),
+        description="Event timestamp (UTC)",
     )
     data: dict[str, Any] = Field(
         default_factory=dict,

@@ -1,7 +1,7 @@
 """Auxiliary storage operations (idempotency, caching, queues)."""
 
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 
 from redis.asyncio import Redis
 
@@ -143,7 +143,7 @@ class NotificationQueue:
         """
         task.retry_count += 1
         delay = task.calculate_retry_delay()
-        task.retry_after = datetime.utcnow()
+        task.retry_after = datetime.now(timezone.utc)
 
         # For simplicity, just requeue with incremented retry count
         # A production system might use a delayed queue
@@ -219,7 +219,7 @@ class RateLimiter:
         Returns:
             True if within limit
         """
-        minute = datetime.utcnow().strftime("%Y%m%d%H%M")
+        minute = datetime.now(timezone.utc).strftime("%Y%m%d%H%M")
         key = RedisKeys.notify_rate(rule_id, minute)
 
         count = await self.redis.incr(key)

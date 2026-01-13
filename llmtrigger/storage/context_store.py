@@ -1,7 +1,6 @@
 """Context window storage operations."""
 
 import json
-from datetime import datetime
 from typing import Any
 
 from redis.asyncio import Redis
@@ -35,10 +34,7 @@ class ContextStore:
         entry = json.dumps(event.to_context_entry())
         await self.redis.zadd(key, {entry: timestamp_ms})
 
-        # Cleanup old events
-        await self._cleanup(key)
-
-        # Set key expiration
+        # Set key expiration (rely on Redis TTL instead of manual cleanup)
         ttl = self._settings.context_window_seconds + 60
         await self.redis.expire(key, ttl)
 
@@ -58,16 +54,8 @@ class ContextStore:
         """
         key = RedisKeys.context(context_key)
 
-        # Calculate time cutoff
-        cutoff_ms = self._get_cutoff_timestamp()
-
-        # Get events within time window
-        entries = await self.redis.zrangebyscore(
-            key,
-            min=cutoff_ms,
-            max="+inf",
-            withscores=False,
-        )
+        # Get all events (rely on Redis TTL for expiration)
+        entries = await self.redis.zrange(key, 0, -1)
 
         events = []
         for entry in entries:
@@ -94,9 +82,9 @@ class ContextStore:
             Number of events
         """
         key = RedisKeys.context(context_key)
-        cutoff_ms = self._get_cutoff_timestamp()
 
-        return await self.redis.zcount(key, min=cutoff_ms, max="+inf")
+        # Count all events (rely on Redis TTL for expiration)
+        return await self.redis.zcard(key)
 
     async def clear_context(self, context_key: str) -> None:
         """Clear all events from a context window.
@@ -106,31 +94,3 @@ class ContextStore:
         """
         key = RedisKeys.context(context_key)
         await self.redis.delete(key)
-
-    async def _cleanup(self, key: str) -> None:
-        """Clean up old events from context window.
-
-        Args:
-            key: Redis key for context
-        """
-        cutoff_ms = self._get_cutoff_timestamp()
-
-        # Remove events outside time window
-        await self.redis.zremrangebyscore(key, "-inf", cutoff_ms - 1)
-
-        # Limit by count (keep most recent events)
-        max_events = self._settings.context_max_events
-        count = await self.redis.zcard(key)
-        if count > max_events:
-            # Remove oldest events
-            await self.redis.zremrangebyrank(key, 0, count - max_events - 1)
-
-    def _get_cutoff_timestamp(self) -> int:
-        """Get cutoff timestamp for time window.
-
-        Returns:
-            Cutoff timestamp in milliseconds
-        """
-        now = datetime.utcnow()
-        cutoff = now.timestamp() - self._settings.context_window_seconds
-        return int(cutoff * 1000)
