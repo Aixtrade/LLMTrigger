@@ -59,24 +59,14 @@ class EventHandler:
             logger.debug("No rules match event type", event_type=event.event_type)
             return
 
-        # Filter by context key
-        matching_rules = [
-            rule for rule in rules
-            if rule.matches_context_key(event.context_key)
-        ]
-
-        if not matching_rules:
-            logger.debug("No rules match context key", context_key=event.context_key)
-            return
-
         logger.info(
             "Found matching rules",
             event_type=event.event_type,
-            rule_count=len(matching_rules),
+            rule_count=len(rules),
         )
 
         # Step 4 & 5: Evaluate rules and queue notifications
-        for rule in matching_rules:
+        for rule in rules:
             try:
                 await self._evaluate_rule(event, rule)
             except Exception as e:

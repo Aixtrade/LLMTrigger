@@ -159,7 +159,6 @@
 - `enabled` boolean，是否启用
 - `priority` int，优先级（越大越优先）
 - `event_types` string[] (必填)，匹配事件类型
-- `context_keys` string[]，上下文 key 匹配模式（支持 `*`）
 - `rule_config` object (必填)，规则配置
   - `rule_config.rule_type` 必填，规则类型
   - `rule_config.pre_filter` 在 `traditional`/`hybrid` 必填
@@ -212,7 +211,6 @@
 - `enabled` boolean，是否启用
 - `priority` int，优先级
 - `event_types` string[]，事件类型列表（不能为空数组）
-- `context_keys` string[]，上下文 key 匹配模式
 - `rule_config` object，规则配置
 - `notify_policy` object，通知策略
 

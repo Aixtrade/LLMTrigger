@@ -145,10 +145,6 @@ class Rule(BaseModel):
     enabled: bool = Field(default=True, description="Whether rule is enabled")
     priority: int = Field(default=100, ge=0, description="Rule priority (higher = more important)")
     event_types: list[str] = Field(..., description="Matched event types")
-    context_keys: list[str] = Field(
-        default_factory=list,
-        description="Matched context key patterns (supports wildcard *)",
-    )
     rule_config: RuleConfig = Field(..., description="Rule configuration")
     notify_policy: NotifyPolicy = Field(
         default_factory=NotifyPolicy,
@@ -162,31 +158,3 @@ class Rule(BaseModel):
     def matches_event_type(self, event_type: str) -> bool:
         """Check if rule matches the given event type."""
         return event_type in self.event_types
-
-    def matches_context_key(self, context_key: str) -> bool:
-        """Check if rule matches the given context key (supports wildcard)."""
-        if not self.context_keys:
-            return True  # No filter means match all
-
-        for pattern in self.context_keys:
-            if self._match_pattern(pattern, context_key):
-                return True
-        return False
-
-    @staticmethod
-    def _match_pattern(pattern: str, value: str) -> bool:
-        """Match a pattern with wildcard support."""
-        if pattern == "*":
-            return True
-        if "*" not in pattern:
-            return pattern == value
-
-        # Simple wildcard matching
-        parts = pattern.split("*")
-        if len(parts) == 2:
-            prefix, suffix = parts
-            return value.startswith(prefix) and value.endswith(suffix)
-
-        # More complex patterns - use fnmatch-like logic
-        import fnmatch
-        return fnmatch.fnmatch(value, pattern)

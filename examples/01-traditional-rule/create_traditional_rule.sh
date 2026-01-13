@@ -86,7 +86,6 @@ RULE_RESPONSE=$(curl -s -X POST "${API_BASE}/api/v1/rules" \
     \"enabled\": true,
     \"priority\": 100,
     \"event_types\": [\"trade.profit\"],
-    \"context_keys\": [\"trade.profit.*\"],
     \"rule_config\": {
       \"rule_type\": \"traditional\",
       \"pre_filter\": {

@@ -39,7 +39,6 @@ RULE_RESPONSE=$(curl -s -X POST "${API_BASE}/api/v1/rules" \
     \"enabled\": true,
     \"priority\": 100,
     \"event_types\": [\"system.metric\"],
-    \"context_keys\": [\"system.metric.*\"],
     \"rule_config\": {
       \"rule_type\": \"llm\",
       \"llm_config\": {

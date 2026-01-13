@@ -19,10 +19,6 @@ class RuleCreate(BaseModel):
     enabled: bool = Field(default=True, description="Whether rule is enabled")
     priority: int = Field(default=100, ge=0, le=1000, description="Rule priority")
     event_types: list[str] = Field(..., min_length=1, description="Matched event types")
-    context_keys: list[str] = Field(
-        default_factory=list,
-        description="Matched context key patterns",
-    )
     rule_config: RuleConfig = Field(..., description="Rule configuration")
     notify_policy: NotifyPolicy = Field(
         default_factory=NotifyPolicy,
@@ -38,7 +34,6 @@ class RuleUpdate(BaseModel):
     enabled: bool | None = None
     priority: int | None = Field(default=None, ge=0, le=1000)
     event_types: list[str] | None = Field(default=None, min_length=1)
-    context_keys: list[str] | None = None
     rule_config: RuleConfig | None = None
     notify_policy: NotifyPolicy | None = None
 
@@ -58,7 +53,6 @@ class RuleResponse(BaseModel):
     enabled: bool
     priority: int
     event_types: list[str]
-    context_keys: list[str]
     rule_config: RuleConfig
     notify_policy: NotifyPolicy
     metadata: RuleMetadata

@@ -59,7 +59,6 @@ def make_rule(
         enabled=enabled,
         priority=priority,
         event_types=event_types,
-        context_keys=[],
         rule_config=RuleConfig(
             rule_type=RuleType.TRADITIONAL,
             pre_filter=PreFilter(expression="profit_rate > 0.01"),
@@ -185,7 +184,6 @@ async def test_replace_rule_overwrites_fields() -> None:
         enabled=False,
         priority=300,
         event_types=["trade.loss"],
-        context_keys=["trade.loss.*"],
         rule_config=RuleConfig(
             rule_type=RuleType.TRADITIONAL,
             pre_filter=PreFilter(expression="profit_rate < -0.05"),

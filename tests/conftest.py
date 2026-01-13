@@ -50,7 +50,6 @@ def sample_rule_data() -> dict:
         "enabled": True,
         "priority": 100,
         "event_types": ["trade.profit"],
-        "context_keys": ["trade.profit.*"],
         "rule_config": {
             "rule_type": "hybrid",
             "pre_filter": {

@@ -342,7 +342,6 @@ curl -X POST "http://localhost:8000/api/v1/rules" \
   -d '{
     "name": "[Hybrid] 价格异常综合分析",
     "event_types": ["price.update"],
-    "context_keys": ["price.update.*"],
     "rule_config": {
       "rule_type": "hybrid",
       "pre_filter": {

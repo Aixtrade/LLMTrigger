@@ -45,7 +45,6 @@
   "enabled": true,
   "priority": 100,
   "event_types": ["trade.profit"],
-  "context_keys": ["trade.profit.*"],
 
   "rule_config": {
     "rule_type": "hybrid",
@@ -138,7 +137,6 @@
   "enabled": "boolean",          // 是否启用
   "priority": "integer",         // 优先级（越大越高）
   "event_types": ["string"],     // 匹配的事件类型列表
-  "context_keys": ["string"],    // 匹配的 context_key 模式（支持通配符 *）
 
   "rule_config": {
     "rule_type": "traditional | llm | hybrid",
@@ -528,12 +526,6 @@ notify_policy:
 | 价格更新 | `price.update.BTCUSDT` |
 | 技术指标 | `indicator.update.BTCUSDT` |
 | 系统监控 | `system.metrics.trading-server-01` |
-
-### 8.3 通配符支持
-
-规则配置中的 `context_keys` 字段支持通配符:
-- `trade.profit.*` - 匹配所有交易盈利上下文
-- `*.BTCUSDT` - 匹配所有 BTCUSDT 相关上下文
 
 ---
 
