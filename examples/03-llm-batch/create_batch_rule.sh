@@ -7,7 +7,7 @@
 set -euo pipefail
 
 # 配置
-API_BASE="${API_BASE:-http://127.0.0.1:8000}"
+API_BASE="${API_BASE:-http://127.0.0.1:8203}"
 TELEGRAM_CHAT_ID="${1:-1234567890}"  # 从参数获取，默认 1234567890
 
 echo "==========================================="
@@ -23,7 +23,7 @@ echo ""
 echo "🔍 检查 API 服务..."
 if ! curl -s -f "${API_BASE}/health" > /dev/null 2>&1; then
     echo "❌ API 服务未运行！"
-    echo "   请先启动: uv run uvicorn llmtrigger.api.app:app --reload"
+    echo "   请先启动: uv run uvicorn llmtrigger.api.app:app --reload --port 8203"
     exit 1
 fi
 echo "✅ API 服务正常"

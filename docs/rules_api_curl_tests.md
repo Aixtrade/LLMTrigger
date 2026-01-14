@@ -4,7 +4,7 @@ Use the commands below to exercise the rule-management API. The script prints ea
 uses `python3` to extract the created `rule_id` for follow-up calls.
 
 Notes:
-- Use `http://127.0.0.1:8000` as the base URL (no trailing slash).
+- Use `http://127.0.0.1:8203` as the base URL (no trailing slash).
 - Run with `bash` or `zsh`.
 
 ```bash
@@ -12,7 +12,7 @@ Notes:
 set -euo pipefail
 
 # 1) Create a rule (copy rule_id from the response)
-curl -s -X POST "http://127.0.0.1:8000/api/v1/rules" \
+curl -s -X POST "http://127.0.0.1:8203/api/v1/rules" \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Rule API Test",
@@ -42,19 +42,19 @@ rule_id="rule_xxxxxxxxxxxxxxxxx"
 echo "RULE_ID=$rule_id"
 
 # 2) List with filters + pagination
-curl -s "http://127.0.0.1:8000/api/v1/rules?event_type=trade.profit&enabled=true&page=1&page_size=5"
-curl -s "http://127.0.0.1:8000/api/v1/rules?event_type=trade.profit&enabled=false&name_contains=api&page=1&page_size=5"
+curl -s "http://127.0.0.1:8203/api/v1/rules?event_type=trade.profit&enabled=true&page=1&page_size=5"
+curl -s "http://127.0.0.1:8203/api/v1/rules?event_type=trade.profit&enabled=false&name_contains=api&page=1&page_size=5"
 
 # 3) Get by ID
-curl -s "http://127.0.0.1:8000/api/v1/rules/${rule_id}"
+curl -s "http://127.0.0.1:8203/api/v1/rules/${rule_id}"
 
 # 4) PATCH (partial update)
-curl -s -X PATCH "http://127.0.0.1:8000/api/v1/rules/${rule_id}" \
+curl -s -X PATCH "http://127.0.0.1:8203/api/v1/rules/${rule_id}" \
   -H 'Content-Type: application/json' \
   -d '{"description":"Updated description","enabled":false}'
 
 # 5) PUT (replace)
-curl -s -X PUT "http://127.0.0.1:8000/api/v1/rules/${rule_id}" \
+curl -s -X PUT "http://127.0.0.1:8203/api/v1/rules/${rule_id}" \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Rule API Test Replaced",
@@ -73,24 +73,24 @@ curl -s -X PUT "http://127.0.0.1:8000/api/v1/rules/${rule_id}" \
   }'
 
 # 6) Update status
-curl -s -X PATCH "http://127.0.0.1:8000/api/v1/rules/${rule_id}/status" \
+curl -s -X PATCH "http://127.0.0.1:8203/api/v1/rules/${rule_id}/status" \
   -H 'Content-Type: application/json' \
   -d '{"enabled": false}'
 
 # 7) History (currently returns an empty list)
-curl -s "http://127.0.0.1:8000/api/v1/rules/${rule_id}/history?page=1&page_size=10"
+curl -s "http://127.0.0.1:8203/api/v1/rules/${rule_id}/history?page=1&page_size=10"
 
 # 8) Delete + get after delete (expect 404)
-curl -s -X DELETE "http://127.0.0.1:8000/api/v1/rules/${rule_id}"
-curl -s "http://127.0.0.1:8000/api/v1/rules/${rule_id}"
+curl -s -X DELETE "http://127.0.0.1:8203/api/v1/rules/${rule_id}"
+curl -s "http://127.0.0.1:8203/api/v1/rules/${rule_id}"
 
 # 9) Validation error (422)
-curl -s -X POST "http://127.0.0.1:8000/api/v1/rules" \
+curl -s -X POST "http://127.0.0.1:8203/api/v1/rules" \
   -H 'Content-Type: application/json' \
   -d '{"name":""}'
 
 # 10) Rule config mismatch (422)
-curl -s -X POST "http://127.0.0.1:8000/api/v1/rules" \
+curl -s -X POST "http://127.0.0.1:8203/api/v1/rules" \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "Invalid LLM",
@@ -99,10 +99,10 @@ curl -s -X POST "http://127.0.0.1:8000/api/v1/rules" \
   }'
 
 # 11) Update with empty event_types (422)
-curl -s -X PATCH "http://127.0.0.1:8000/api/v1/rules/${rule_id}" \
+curl -s -X PATCH "http://127.0.0.1:8203/api/v1/rules/${rule_id}" \
   -H 'Content-Type: application/json' \
   -d '{"event_types": []}'
 
 # 12) Not found (404)
-curl -s "http://127.0.0.1:8000/api/v1/rules/not-exist-rule-id"
+curl -s "http://127.0.0.1:8203/api/v1/rules/not-exist-rule-id"
 ```

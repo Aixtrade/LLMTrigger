@@ -18,6 +18,6 @@ RUN uv sync --frozen --no-dev
 
 COPY llmtrigger ./llmtrigger
 
-EXPOSE 8000
+EXPOSE 8203
 
-CMD ["uv", "run", "uvicorn", "llmtrigger.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+CMD ["uv", "run", "uvicorn", "llmtrigger.api.app:app", "--host", "0.0.0.0", "--port", "8203"]

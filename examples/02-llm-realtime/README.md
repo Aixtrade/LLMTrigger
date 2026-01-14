@@ -44,7 +44,7 @@ docker-compose up -d redis rabbitmq
 ### 2. 启动 API 服务 (终端 1)
 
 ```bash
-uv run uvicorn llmtrigger.api.app:app --reload
+uv run uvicorn llmtrigger.api.app:app --reload --port 8203
 ```
 
 ### 3. 启动 Worker 进程 (终端 2)
@@ -231,7 +231,7 @@ curl -X POST "${OPENAI_BASE_URL}/chat/completions" \
 
 ```bash
 # 删除测试规则 (从 create_llm_price_rule.sh 输出中获取 rule_id)
-curl -X DELETE "http://localhost:8000/api/v1/rules/{rule_id}"
+curl -X DELETE "http://localhost:8203/api/v1/rules/{rule_id}"
 
 # 清空 Redis 测试数据
 docker exec llmtrigger-redis-1 redis-cli KEYS "llmtrigger:*" | \
@@ -337,7 +337,7 @@ asyncio.run(test_custom_price())
 结合 Traditional 和 LLM 的优势:
 
 ```bash
-curl -X POST "http://localhost:8000/api/v1/rules" \
+curl -X POST "http://localhost:8203/api/v1/rules" \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "[Hybrid] 价格异常综合分析",

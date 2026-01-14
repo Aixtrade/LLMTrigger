@@ -26,15 +26,11 @@ uv sync --dev
 
 ### 启动 API
 ```bash
-uv run uvicorn llmtrigger.api.app:app --reload
+uv run uvicorn llmtrigger.api.app:app --reload --port 8203
 ```
 
-### 启动 Worker
-```bash
-uv run python -m llmtrigger.worker
-```
+API 文档：`http://localhost:8203/docs`
 
-API 文档：`http://localhost:8000/docs`
 
 ## 配置说明
 配置项从环境变量与 `.env` 读取，常用项包括：

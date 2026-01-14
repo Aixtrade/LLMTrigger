@@ -26,15 +26,11 @@ uv sync --dev
 
 ### Run API
 ```bash
-uv run uvicorn llmtrigger.api.app:app --reload
+uv run uvicorn llmtrigger.api.app:app --reload --port 8203
 ```
 
-### Run Worker
-```bash
-uv run python -m llmtrigger.worker
-```
+API docs: `http://localhost:8203/docs`
 
-API docs: `http://localhost:8000/docs`
 
 ## Configuration
 Settings are loaded from environment variables and `.env`. Common options:

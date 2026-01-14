@@ -64,9 +64,9 @@ The system consists of two main runnable components:
 ### Execution Commands
 *   **Run API:**
     ```bash
-    uv run uvicorn llmtrigger.api.app:app --reload
+    uv run uvicorn llmtrigger.api.app:app --reload --port 8203
     ```
-    API documentation available at `http://localhost:8000/docs`.
+    API documentation available at `http://localhost:8203/docs`.
 
 *   **Run Worker:**
     ```bash

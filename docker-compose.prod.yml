@@ -3,9 +3,9 @@ services:
     build: .
     image: llmtrigger:prod
     container_name: llmtrigger-api
-    command: ["uv", "run", "uvicorn", "llmtrigger.api.app:app", "--host", "0.0.0.0", "--port", "8000", "--workers", "2"]
+    command: ["uv", "run", "uvicorn", "llmtrigger.api.app:app", "--host", "0.0.0.0", "--port", "8203", "--workers", "2"]
     ports:
-      - "8203:8000"
+      - "8203:8203"
     env_file:
       - .env
     restart: unless-stopped

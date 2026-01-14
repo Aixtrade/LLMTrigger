@@ -135,7 +135,7 @@ examples/
 docker-compose up -d redis rabbitmq
 
 # 2. 启动 API 服务（终端 1）
-uv run uvicorn llmtrigger.api.app:app --reload
+uv run uvicorn llmtrigger.api.app:app --reload --port 8203
 
 # 3. 启动 Worker 进程（终端 2）
 uv run python -m llmtrigger.worker
@@ -268,7 +268,7 @@ GET llmtrigger:trigger:mode:interval_lock:{rule_id}
 
 ```bash
 # 删除规则（从创建脚本输出中获取 rule_id）
-curl -X DELETE "http://localhost:8000/api/v1/rules/{rule_id}"
+curl -X DELETE "http://localhost:8203/api/v1/rules/{rule_id}"
 
 # 清空 Redis
 docker exec llmtrigger-redis-1 redis-cli KEYS "llmtrigger:*" | \

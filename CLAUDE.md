@@ -58,12 +58,12 @@ cp .env.example .env                   # 配置环境 (需编辑设置OPENAI_API
 ### 运行服务
 ```bash
 # API服务 (开发模式,热重载)
-uv run uvicorn llmtrigger.api.app:app --reload
+uv run uvicorn llmtrigger.api.app:app --reload --port 8203
 
 # Worker进程 (消费RabbitMQ事件 + 处理通知)
 uv run python -m llmtrigger.worker
 ```
-API文档: http://localhost:8000/docs
+API文档: http://localhost:8203/docs
 
 ### 测试
 ```bash
